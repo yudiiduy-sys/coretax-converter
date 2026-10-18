@@ -12,7 +12,7 @@ st.set_page_config(
     layout="centered"
 )
 
-st.title("🏛️ Konverter Presisi SIMKEU & PTKP UNEJ ke Coretax PPh 21")
+st.title("🏛️ Konverter Otomatis SIMKEU & PTKP UNEJ ke Coretax PPh 21")
 st.markdown("""
 Aplikasi web online untuk **Checker & Transformer** data PPh 21 dari SIMKEU Universitas Jember 
 dengan pencocokan otomatis Status PTKP berdasarkan Database Referensi UNEJ 2026.
@@ -155,7 +155,7 @@ if uploaded_simkeu is not None:
                 ET.SubElement(row_xml, "Deemed").text = str(item['Deemed'])
                 ET.SubElement(row_xml, "TaxRate").text = str(item['Tarif'])
                 ET.SubElement(row_xml, "RefDocType").text = item['Jenis Dok. Referensi']
-                ET.SubElement(row_xml, "RefDocNumber").text = item['RefDocNumber'] if 'RefDocNumber' in item else item['Nomor Dok. Referensi']
+                ET.SubElement(row_xml, "RefDocNumber").text = item['Nomor Dok. Referensi']
                 ET.SubElement(row_xml, "RefDocDate").text = item['Tanggal Dok. Referensi']
 
             xml_str = minidom.parseString(ET.tostring(root)).toprettyxml(indent="  ")
