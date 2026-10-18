@@ -15,7 +15,7 @@ st.set_page_config(
 st.title("🏛️ Konverter Otomatis SIMKEU & PTKP UNEJ ke Coretax PPh 21")
 st.markdown("""
 Aplikasi web online untuk **Checker & Transformer** data PPh 21 dari SIMKEU Universitas Jember 
-dengan pencocokan otomatis Status PTKP berdasarkan Database Referensi UNEJ 2026.
+dengan pencocokan otomatis Status PTKP berdasarkan Kolom G (PTKP) pada Database UNEJ 2026.
 """)
 
 st.markdown("---")
@@ -23,8 +23,8 @@ st.markdown("---")
 # Bagian 1: Upload File SIMKEU
 uploaded_simkeu = st.file_uploader("1. Unggah File Mentah SIMKEU (.xls / .xlsx)", type=["xls", "xlsx"])
 
-# Bagian 2: Upload File Database PTKP UNEJ (Opsional / Pendukung)
-uploaded_ptkp = st.file_uploader("2. Unggah File Referensi PTKP UNEJ 2026 (.xlsx - Opsional)", type=["xlsx"])
+# Bagian 2: Upload File Database PTKP UNEJ
+uploaded_ptkp = st.file_uploader("2. Unggah File Referensi PTKP UNEJ 2026 (.xlsx)", type=["xlsx"])
 
 if uploaded_simkeu is not None:
     try:
@@ -36,16 +36,16 @@ if uploaded_simkeu is not None:
         
         st.success(f"✅ File SIMKEU berhasil diunggah! Ditemukan {len(df_raw)} data pegawai.")
 
-        # Load Database PTKP jika diunggah
+        # Load Database PTKP dan ambil dari Sheet 'DATABASE PEGAWAI UNEJ' Kolom G ('PTKP')
         ptkp_dict = {}
         if uploaded_ptkp is not None:
-            df_ptkp_ref = pd.read_excel(uploaded_ptkp, sheet_name='PTKP')
+            df_ptkp_ref = pd.read_excel(uploaded_ptkp, sheet_name='DATABASE PEGAWAI UNEJ')
             for _, r in df_ptkp_ref.iterrows():
                 nik_val = re.sub(r'[^0-9]', '', str(r.get('NIK', '')))
-                ptkp_val = str(r.get('STATUS PTKP', 'K/0')).strip()
-                if nik_val:
+                ptkp_val = str(r.get('PTKP', 'K/0')).strip()
+                if nik_val and ptkp_val and ptkp_val != 'nan':
                     ptkp_dict[nik_val] = ptkp_val
-            st.info(f"📚 Database PTKP UNEJ berhasil dimuat ({len(ptkp_dict)} data referensi NIK tercatat).")
+            st.info(f"📚 Database PTKP UNEJ (Kolom G) berhasil dimuat ({len(ptkp_dict)} data referensi NIK tercatat).")
         
         # Pengaturan Masa Pajak, Tahun Pajak, dan NPWP Pemotong
         col1, col2, col3 = st.columns(3)
@@ -79,7 +79,7 @@ if uploaded_simkeu is not None:
                 if len(nik) != 16:
                     errors.append(f"Baris {row_num} ({nama}): NIK '{nik}' tidak valid (harus 16 digit).")
 
-                # Tentukan Status PTKP (Otomatis dari Database UNEJ jika ada, fallback ke K/0)
+                # Tentukan Status PTKP otomatis dari Kolom G Database UNEJ (fallback ke K/0 jika tidak ditemukan)
                 status_ptkp = ptkp_dict.get(nik, 'K/0')
 
                 # Penentuan Counterpart TIN & ID TKU Penerima (NIK + 000000)
@@ -123,7 +123,7 @@ if uploaded_simkeu is not None:
                 for err in errors:
                     st.text(err)
             else:
-                st.info("✨ Pengecekan Selesai: Data presisi, status PTKP tersinkronisasi dari database UNEJ, dan siap diimpor!")
+                st.info("✨ Pengecekan Selesai: Data presisi, status PTKP tersinkronisasi dari Kolom G Database UNEJ, dan siap diimpor!")
 
             df_clean = pd.DataFrame(processed_rows)
 
@@ -154,7 +154,7 @@ if uploaded_simkeu is not None:
                 ET.SubElement(row_xml, "Gross").text = str(item['Penghasilan'])
                 ET.SubElement(row_xml, "Deemed").text = str(item['Deemed'])
                 ET.SubElement(row_xml, "TaxRate").text = str(item['Tarif'])
-                ET.SubHeader = ET.SubElement(row_xml, "RefDocType").text = item['Jenis Dok. Referensi']
+                ET.SubElement(row_xml, "RefDocType").text = item['Jenis Dok. Referensi']
                 ET.SubElement(row_xml, "RefDocNumber").text = item['Nomor Dok. Referensi']
                 ET.SubElement(row_xml, "RefDocDate").text = item['Tanggal Dok. Referensi']
 
@@ -166,7 +166,7 @@ if uploaded_simkeu is not None:
             col_d1, col_d2 = st.columns(2)
             with col_d1:
                 st.download_button(
-                    label="📄 Download Excel Presisi (PTKP Tersinkron)",
+                    label="📄 Download Excel Presisi (PTKP Kolom G Tersinkron)",
                     data=excel_data,
                     file_name="Hasil_Impor_Coretax_UNEJ.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
